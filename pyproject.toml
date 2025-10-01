@@ -1,0 +1,12 @@
+[project]
+name = "damsan-api"
+version = "0.1.0"
+description = "Implement APIs for damsan.life"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "black>=25.9.0",
+]
