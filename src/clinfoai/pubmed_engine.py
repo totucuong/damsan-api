@@ -1,3 +1,6 @@
+from .utils.prompt_compiler import PromptArchitecture, read_json
+from .dense_search import generate_paths, PubMedDenseSearch
+
 import os
 import re
 import sys
@@ -27,8 +30,6 @@ import pdb
 import google.generativeai as genai
 
 sys.path.append(str(Path(__file__).resolve().parent))
-from utils.prompt_compiler import PromptArchitecture, read_json
-from dense_search import generate_paths, PubMedDenseSearch
 
 
 def subtract_n_years(date_str: str, n: int = 20) -> str:
