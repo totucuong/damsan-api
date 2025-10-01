@@ -1,5 +1,4 @@
-from sentence_transformers import SentenceTransformer
-import pinecone
+from pinecone import Pinecone
 
 
 class PineCone_Driver:
