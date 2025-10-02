@@ -51,7 +51,6 @@ class PubMedNeuralRetriever:
         temperature: float = 0.5,
         model: str = "gpt-3.5-turbo",
         verbose: bool = True,
-        debug: bool = False,
         open_ai_key: str = "",
         email: str = "",
         wait: int = 3,
@@ -63,7 +62,6 @@ class PubMedNeuralRetriever:
             architecture_path=architecture_path, verbose=verbose
         )
         self.temperature = temperature
-        self.debug = debug
         self.open_ai_key = open_ai_key
         self.email = email
         self.time_out = 61
@@ -209,9 +207,8 @@ class PubMedNeuralRetriever:
             "relevance_prompt", "system"
         ).format()
 
-        if self.debug:
-            print(f"User prompt: {user_prompt}")
-            print(f"System prompt: {system_prompt}")
+        logger.debug(f"User prompt: {user_prompt}")
+        logger.debug(f"System prompt: {system_prompt}")
 
         if is_reconstruction:
             message_ = [

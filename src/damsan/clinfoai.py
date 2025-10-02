@@ -10,7 +10,6 @@ class ClinfoAI:
         engine: str = "PubMed",
         openai_key: str = "YOUR API TOKEN",
         email: str = "YOUR EMAIL",
-        dense_search: bool = False,
         verbose: bool = False,
     ) -> None:
 
@@ -20,7 +19,6 @@ class ClinfoAI:
         self.openai_key = openai_key
         self.verbose = verbose
         self.architecture_path = architecture_path
-        self.dense_search = dense_search
         self.init_engine()
 
     def init_engine(self):
@@ -30,7 +28,6 @@ class ClinfoAI:
                 architecture_path=self.architecture_path,
                 model=self.llm,
                 verbose=self.verbose,
-                debug=False,
                 open_ai_key=self.openai_key,
                 email=self.email,
             )
