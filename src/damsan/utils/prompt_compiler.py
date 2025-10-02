@@ -32,7 +32,7 @@ class PromptArchitecture:
         for key, sub_task in self.architecture["$schema"].items():
             print(f"\nTask Name: {key}")
             print(
-                "------------------------------------------------------------------------"
+                "----------------------------------------------------------------------"
             )
             for key_, sub_task_ in sub_task.items():
                 if self.verbose:
@@ -41,7 +41,7 @@ class PromptArchitecture:
                     os.path.join(self.path, self.architecture["$schema"][key][key_])
                 )
 
-    def get_prompt(self, task: str, sub_task: str = "") -> dict:
+    def get_prompt(self, task: str, sub_task: str = "") -> str:
         if sub_task == "":
             return self.architecture["$schema"][task]
         else:
