@@ -1,5 +1,12 @@
+"""Clinical information retrieval orchestration for the damsan package."""
+
+import logging
+
 from .pubmed_engine import PubMedNeuralRetriever
 from .bm25 import bm25_ranked
+
+
+logger = logging.getLogger(__name__)
 
 
 class ClinfoAI:
@@ -23,7 +30,6 @@ class ClinfoAI:
 
     def init_engine(self):
         if self.engine == "PubMed":
-
             self.NEURAL_RETRIVER = PubMedNeuralRetriever(
                 architecture_path=self.architecture_path,
                 model=self.llm,
@@ -31,7 +37,7 @@ class ClinfoAI:
                 open_ai_key=self.openai_key,
                 email=self.email,
             )
-            print("PubMed Retriever Initialized")
+            logger.info("PubMed Retriever initialized")
         else:
             raise Exception("Invalid Engine")
 
@@ -46,21 +52,22 @@ class ClinfoAI:
                 restriction_date=restriction_date,
             )
             if (len(queries) == 0) or (len(article_ids) == 0):
-                print(
-                    f"Sorry, we weren't able to find any articles in {self.engine} "
-                    f"relevant to your question. Please try again."
+                logger.warning(
+                    "No relevant articles found in %s for the provided question",
+                    self.engine,
                 )
                 return [], []
 
             articles = self.NEURAL_RETRIVER.fetch_article_data(article_ids)
             if self.verbose:
-                print(
-                    f"Retrieved {len(articles)} articles. Identifying the relevant ones"
-                    f"and summarizing them (this may take a minute)"
+                logger.info(
+                    "Retrieved %s articles. Identifying the relevant ones and "
+                    "summarizing them (this may take a minute)",
+                    len(articles),
                 )
             return articles, queries
         except Exception as error:
-            print(f"Internal Service Error, {self.engine} might be down: {error}")
+            logger.exception("Internal service error; %s may be unavailable", self.engine)
             return [], []
 
     def summarize_relevant(self, articles, question):
@@ -74,7 +81,7 @@ class ClinfoAI:
     ):
         if USE_BM25:
             if len(article_summaries) > 21:
-                print("Using BM25 to rank articles")
+                logger.info("Using BM25 to rank articles")
                 corpus = [article["abstract"] for article in article_summaries]
                 article_summaries = bm25_ranked(
                     list_to_oganize=article_summaries,
