@@ -7,7 +7,14 @@ authors = [
     { name = "Tu Cuong To", email = "totucuong@gmail.com" }
 ]
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "biopython>=1.85",
+    "google-generativeai>=0.8.5",
+    "langchain>=0.3.27",
+    "pinecone-client>=6.0.0",
+    "rank-bm25>=0.2.2",
+    "sentence-transformers>=5.1.1",
+]
 
 [project.scripts]
 damsan = "damsan:main"
@@ -15,6 +22,7 @@ damsan = "damsan:main"
 [project.optional-dependencies]
 dev = [
     "black>=25.9.0",
+    "flake8>=7.3.0",
 ]
 
 [build-system]
