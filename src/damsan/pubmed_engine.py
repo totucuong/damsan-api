@@ -17,10 +17,10 @@ from langchain.prompts import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
 )
-from logging import Logger
 from .utils.prompt_compiler import PromptArchitecture
+import logging
 
-logger = Logger("PubMedNeuralRetriever")
+logger = logging.getLogger(__name__)
 sys.path.append(str(Path(__file__).resolve().parent))
 
 
