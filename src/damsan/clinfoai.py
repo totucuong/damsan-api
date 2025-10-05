@@ -67,7 +67,7 @@ class ClinfoAI:
                 )
             return articles, queries
         except Exception as error:
-            logger.exception("Internal service error; %s may be unavailable", self.engine)
+            logger.exception("Internal service error; %s may be unavailable", error)
             return [], []
 
     def summarize_relevant(self, articles, question):
