@@ -9,32 +9,32 @@ from .bm25 import bm25_ranked
 logger = logging.getLogger(__name__)
 
 
-class ClinfoAI:
+class Damsan:
     def __init__(
         self,
-        architecture_path,
-        llm: str = "gpt-3.5-turbo",
+        prompt_file_path,
+        model: str = "gpt-5",
         engine: str = "PubMed",
-        openai_key: str = "YOUR API TOKEN",
+        openai_api_key: str = "YOUR API TOKEN",
         email: str = "YOUR EMAIL",
         verbose: bool = False,
     ) -> None:
 
         self.engine = engine
-        self.llm = llm
+        self.llm = model
         self.email = email
-        self.openai_key = openai_key
+        self.openai_api_key = openai_api_key
         self.verbose = verbose
-        self.architecture_path = architecture_path
+        self.prompt_file_path = prompt_file_path
         self.init_engine()
 
     def init_engine(self):
         if self.engine == "PubMed":
-            self.NEURAL_RETRIVER = PubMedNeuralRetriever(
-                architecture_path=self.architecture_path,
+            self.retriever = PubMedNeuralRetriever(
+                prompt_file_path=self.prompt_file_path,
                 model=self.llm,
                 verbose=self.verbose,
-                open_ai_key=self.openai_key,
+                openai_api_key=self.openai_api_key,
                 email=self.email,
             )
             logger.info("PubMed Retriever initialized")
@@ -45,7 +45,7 @@ class ClinfoAI:
 
     def retrive_articles(self, question, restriction_date=None):
         try:
-            queries, article_ids = self.NEURAL_RETRIVER.search_pubmed(
+            queries, article_ids = self.retriever.search_pubmed(
                 question=question,
                 num_results=16,
                 num_query_attempts=3,
@@ -58,7 +58,7 @@ class ClinfoAI:
                 )
                 return [], []
 
-            articles = self.NEURAL_RETRIVER.fetch_article_data(article_ids)
+            articles = self.retriever.fetch_article_data(article_ids)
             if self.verbose:
                 logger.info(
                     "Retrieved %s articles. Identifying the relevant ones and "
@@ -71,15 +71,13 @@ class ClinfoAI:
             return [], []
 
     def summarize_relevant(self, articles, question):
-        article_summaries, irrelevant_articles = (
-            self.NEURAL_RETRIVER.summarize_each_article(articles, question)
+        article_summaries, irrelevant_articles = self.retriever.summarize_each_article(
+            articles, question
         )
         return article_summaries, irrelevant_articles
 
-    def synthesis_task(
-        self, article_summaries, question, USE_BM25=False, with_url=True
-    ):
-        if USE_BM25:
+    def synthesis_task(self, article_summaries, question, bm25=False, with_url=True):
+        if bm25:
             if len(article_summaries) > 21:
                 logger.info("Using BM25 to rank articles")
                 corpus = [article["abstract"] for article in article_summaries]
@@ -90,22 +88,43 @@ class ClinfoAI:
                     n=20,
                 )
 
-        synthesis = self.NEURAL_RETRIVER.synthesize_all_articles(
+        synthesis = self.retriever.synthesize_all_articles(
             article_summaries, question, with_url=with_url
         )
         return synthesis
 
-    def forward(self, question, restriction_date=None, return_articles=True):
+    def answer(
+        self, question, bm25=False, restriction_date=None, return_articles=True
+    ) -> dict:
+        """Answer a question using the specified retrieval and synthesis methods.
+
+        Parameters
+        ----------
+        question : str
+            The question to answer.
+        bm25 : bool, optional
+            Whether to use BM25 ranking, by default False
+        restriction_date : str, optional
+            A date to restrict the search, by default None
+        return_articles : bool, optional
+            Whether to return the retrieved articles, by default True
+
+        Returns
+        -------
+        dict
+            The result containing synthesis, article summaries, irrelevant articles,
+            and queries.
+        """
         articles, queries = self.retrive_articles(question, restriction_date)
         article_summaries, irrelevant_articles = self.summarize_relevant(
             articles=articles, question=question
         )
-        synthesis = self.synthesis_task(article_summaries, question)
-        out = dict()
-        out["synthesis"] = synthesis
+        synthesis = self.synthesis_task(article_summaries, question, bm25=bm25)
+        result = dict()
+        result["synthesis"] = synthesis
         if return_articles:
-            out["article_summaries"] = article_summaries
-            out["irrelevant_articles"] = irrelevant_articles
-            out["queries"] = queries
+            result["article_summaries"] = article_summaries
+            result["irrelevant_articles"] = irrelevant_articles
+            result["queries"] = queries
 
-        return out
+        return result
