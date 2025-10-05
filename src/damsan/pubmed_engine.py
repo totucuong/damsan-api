@@ -47,11 +47,11 @@ def subtract_n_years(date_str: str, n: int = 20) -> str:
 class PubMedNeuralRetriever:
     def __init__(
         self,
-        architecture_path: str,
+        prompt_file_path: str,
         temperature: float = 0.5,
-        model: str = "gpt-3.5-turbo",
+        model: str = "gpt-5",
         verbose: bool = True,
-        open_ai_key: str = "",
+        openai_api_key: str = "",
         email: str = "",
         wait: int = 3,
     ):
@@ -59,10 +59,10 @@ class PubMedNeuralRetriever:
         self.model = model
         self.verbose = verbose
         self.architecture = PromptArchitecture(
-            architecture_path=architecture_path, verbose=verbose
+            architecture_path=prompt_file_path, verbose=verbose
         )
         self.temperature = temperature
-        self.open_ai_key = open_ai_key
+        self.openai_api_key = openai_api_key
         self.email = email
         self.time_out = 61
         self.delay = 2
@@ -71,11 +71,10 @@ class PubMedNeuralRetriever:
         if self.verbose:
             self.architecture.print_architecture()
 
-        openai.api_key = self.open_ai_key
+        openai.api_key = self.openai_api_key
 
     def query_api(
         self,
-        model: str,
         prompt: list,
         temperature: float,
         max_tokens: int = 1024,
@@ -84,7 +83,7 @@ class PubMedNeuralRetriever:
 
         chat = ChatOpenAI(
             temperature=temperature,
-            model=model,
+            model=self.model,
             n=n,
         )
 
@@ -112,7 +111,6 @@ class PubMedNeuralRetriever:
         chat_prompt = chat_prompt.format_prompt(question=question).to_messages()
 
         result = self.query_api(
-            model=self.model,
             prompt=chat_prompt,
             temperature=self.temperature,
             max_tokens=max_tokens,
@@ -242,7 +240,6 @@ class PubMedNeuralRetriever:
             ).to_messages()
 
             result = self.query_api(
-                model=self.model,
                 prompt=chat_prompt,
                 temperature=self.temperature,
                 max_tokens=max_tokens,
@@ -360,7 +357,6 @@ class PubMedNeuralRetriever:
             question=question, article_text=article_text
         ).to_messages()
         result = self.query_api(
-            model=self.model,
             prompt=chat_prompt,
             temperature=self.temperature,
             max_tokens=1024,
@@ -483,8 +479,8 @@ class PubMedNeuralRetriever:
         system_prompt = self.architecture.get_prompt(
             "synthesize_prompt", "system"
         ).format()
-        user_prompt = self.architecture.get_prompt("synthesize_prompt", "template")
         system_message_prompt = SystemMessagePromptTemplate.from_template(system_prompt)
+        user_prompt = self.architecture.get_prompt("synthesize_prompt", "template")
         human_message_prompt = HumanMessagePromptTemplate(
             prompt=PromptTemplate(
                 template=user_prompt.format(
@@ -502,7 +498,6 @@ class PubMedNeuralRetriever:
             question=question, article_summaries_str=article_summaries_str
         ).to_messages()
         result = self.query_api(
-            model=self.model,
             prompt=chat_prompt,
             temperature=self.temperature,
             max_tokens=1024,
@@ -512,9 +507,27 @@ class PubMedNeuralRetriever:
             result = result + "\n\n" + "References:\n" + citations
         return result
 
-    def PIPE_LINE(self, question: str):
+    def answer(self, question: str, num_results: int = 2, num_query_attempts: int = 1):
+        """A complete pipeline to answer a question using PubMed articles.
+
+        The pipeline works as follows:
+        1. Generate PubMed queries using the provided question.
+        2. Search PubMed using the generated queries to retrieve relevant article IDs.
+        3. Fetch article data for the retrieved article IDs.
+        4. Summarize each article and determine its relevance to the question.
+
+        Parameters
+        ----------
+        question : str
+            The question to be answered.
+        num_results : int, optional
+            The number of PubMed articles to retrieve, by default 2.
+        num_query_attempts : int, optional
+            The number of attempts to generate PubMed queries, by default 1.
+
+        """
         pubmed_queries, article_ids = self.search_pubmed(
-            question, num_results=4, num_query_attempts=1
+            question, num_results=num_results, num_query_attempts=num_query_attempts
         )
         articles = self.fetch_article_data(article_ids)
         article_summaries, irrelevant_articles = self.summarize_each_article(
