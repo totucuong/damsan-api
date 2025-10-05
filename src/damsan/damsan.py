@@ -14,14 +14,12 @@ class Damsan:
         self,
         prompt_file_path,
         model: str = "gpt-5",
-        engine: str = "PubMed",
         openai_api_key: str = "YOUR API TOKEN",
         email: str = "YOUR EMAIL",
         verbose: bool = False,
     ) -> None:
 
-        self.engine = engine
-        self.llm = model
+        self.model = model
         self.email = email
         self.openai_api_key = openai_api_key
         self.verbose = verbose
@@ -29,19 +27,14 @@ class Damsan:
         self.init_engine()
 
     def init_engine(self):
-        if self.engine == "PubMed":
-            self.retriever = PubMedNeuralRetriever(
-                prompt_file_path=self.prompt_file_path,
-                model=self.llm,
-                verbose=self.verbose,
-                openai_api_key=self.openai_api_key,
-                email=self.email,
-            )
-            logger.info("PubMed Retriever initialized")
-        else:
-            raise Exception("Invalid Engine")
-
-        return "OK"
+        self.retriever = PubMedNeuralRetriever(
+            prompt_file_path=self.prompt_file_path,
+            model=self.model,
+            verbose=self.verbose,
+            openai_api_key=self.openai_api_key,
+            email=self.email,
+        )
+        logger.info("PubMed Retriever initialized")
 
     def retrive_articles(self, question, restriction_date=None):
         try:
@@ -54,7 +47,6 @@ class Damsan:
             if (len(queries) == 0) or (len(article_ids) == 0):
                 logger.warning(
                     "No relevant articles found in %s for the provided question",
-                    self.engine,
                 )
                 return [], []
 
