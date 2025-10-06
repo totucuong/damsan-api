@@ -1,16 +1,35 @@
-# Repository Guidelines
+# Codebase Overview
 
-## Project Structure & Module Organization
-The repo currently contains `main.py` (entrypoint) and `pyproject.toml`. Keep reusable code inside a `damsan_api/` package so modules stay importable and cohesive. Place integration utilities or scripts under `tools/`, and keep configuration or seed data in `config/` or `data/` to avoid cluttering the root. Add README stubs in new directories so their intent stays obvious.
+## Runtime Entry Points
+- `main.py` instantiates the FastAPI app, includes the `v1` routers, and exposes a `/health` check.
+- `pyproject.toml` exposes the console script `damsan = "damsan:main"`, which still targets `src/damsan/__init__.py:main` for CLI experiments.
 
-## Build, Test, and Development Commands
-Create a Python 3.13 virtual environment before installing dependencies: `python3.13 -m venv .venv && source .venv/bin/activate`. Install the project in editable mode for local iteration: `pip install -e .[dev]` (define `[project.optional-dependencies.dev]` inside `pyproject.toml`). Run the executable entrypoint with `python -m main`. When workflows expand, capture them in `make` or `just` recipes so teammates can reuse single-command automation.
+## HTTP Layer (`src/damsan_api`)
+- `config.py` defines `Settings` via `pydantic-settings`, pulling `.env` values for model selection and prompt paths.
+- `services/answer_service.py` adapts `Damsan.answer`, handling configuration defaults and article filtering.
+- `api/v1/answer.py` declares the `POST /v1/answer` endpoint backed by the service and maps exceptions to HTTP responses.
+- `api/v1/schemas.py` stores the Pydantic request/response models.
+- Each new directory ships with a README stub describing its role.
 
-## Coding Style & Naming Conventions
-Follow PEP 8 with four-space indentation and describe module intent in a top-level docstring. Modules, packages, and functions stay snake_case (for example `damsan_api/user_service.py`), classes use PascalCase, and constants are UPPER_SNAKE. Prefer explicit type hints on public functions and avoid side effects at import time. Configure `ruff` (`ruff check`) and `black` (`black .`) via `pyproject.toml` to keep formatting consistent across the team.
+## Core Package (`src/damsan`)
+- `damsan.py` defines the `Damsan` class that orchestrates retrieval, summarisation, and synthesis.
+- `pubmed_engine.py` wraps PubMed search and LLM prompt orchestration via `PubMedNeuralRetriever`.
+- `bm25.py` provides BM25-based reranking helpers for long article lists.
+- `utils/prompt_compiler.py` loads the prompt architecture JSON and turns it into LangChain prompt objects.
 
-## Testing Guidelines
-Adopt pytest and mirror the source tree when naming tests (`tests/user/test_profile.py`). Test functions should read `test_<behavior>` and isolate external systems behind fixtures or fakes. Run `pytest --maxfail=1 --disable-warnings` locally, and add `pytest --cov=damsan_api` for coverage, targeting 80% line coverage or higher. Document shared fixtures in `tests/README.md` when introducing them.
+## Prompt Assets
+- `prompts/PubMed/Architecture_1/master.json` describes the prompt architecture consumed by `PromptArchitecture`.
+- `prompts/PubMed/Architecture_1/task_*_prompt.json` and `task_*_sys.json` store individual user/system messages referenced by the architecture.
 
-## Commit & Pull Request Guidelines
-Use Conventional Commits (`feat: add profile endpoint`) to clarify intent and enable automated release notes. Keep commits focused, and describe follow-up work in the body if needed. Pull requests should link to relevant issues, summarize scope, note risks, and list the commands you ran (for example `pytest`). Attach screenshots or sample payloads when adjusting API contracts, and request a second reviewer for changes that touch shared interfaces.
+## Research & Experiments
+- `notebooks/pubmed.py` is a playground notebook for experimenting with the retrieval pipeline.
+
+## Configuration & Environment
+- `.env` provides `PROMPT_PATH`, `MODEL`, `OPENAI_API_KEY`, and `EMAIL` for both CLI and API runs.
+- `uv.lock` records the resolved dependency set for reproducible installs.
+
+## Tooling & Development
+- Prefer `uv` for dependency management: `uv pip install --editable .[dev]` keeps the lockfile in sync, and `uv pip sync --extra dev` reproduces environments.
+- To run the API locally: `uv run uvicorn main:app --reload`. The service expects the `.env` keys above to be present.
+- Create a virtual environment with `python3.13 -m venv .venv && source .venv/bin/activate` when working without `uv` helpers.
+- Formatting and linting rely on `black`, `ruff`, and `flake8` from the `dev` extras.

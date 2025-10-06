@@ -6,7 +6,7 @@ app = marimo.App(width="medium")
 
 @app.cell
 def _():
-    from damsan.clinfoai import Damsan
+    from damsan.damsan import Damsan
 
     from dotenv import load_dotenv
     import os
